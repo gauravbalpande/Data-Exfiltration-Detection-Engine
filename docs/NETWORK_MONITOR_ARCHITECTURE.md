@@ -36,6 +36,7 @@ network/
 ├── models/
 │     Connection.h
 │     RemoteEndpoint.h
+│     ResolvedEndpoint.h
 │
 ├── collectors/
 │     NetworkMonitor.h
@@ -52,6 +53,12 @@ network/
 ├── intelligence/
 │     RemoteEndpointIdentifier.h
 │     RemoteEndpointIdentifier.cpp
+│     DomainResolver.h
+│     DomainResolver.cpp
+│
+├── cache/
+│     DnsCache.h
+│     DnsCache.cpp
 │
 ├── events/
 │     EventDispatcher.h
@@ -71,7 +78,8 @@ network/
 | collectors | Collects network connection information from the operating system. |
 | tracker | Tracks connection lifecycle (new, active, closed). |
 | attribution | Associates connections with owning processes by PID. |
-| intelligence | Extracts reusable connection intelligence (remote IPs, address family). |
+| intelligence | Extracts reusable connection intelligence (remote IPs, address family, domains). |
+| cache | Caches reverse-DNS hostnames to avoid duplicate lookups. |
 | events | Publishes connection events to other system components. |
 | utils | Shared helpers such as IP address validation. |
 
@@ -149,6 +157,28 @@ Connection Intelligence helper that:
 
 ---
 
+### DomainResolver / DnsCache
+
+Connection Intelligence helpers that:
+
+- Perform reverse DNS lookups for validated remote IPs (IPv4 / IPv6)
+- Cache hostnames (with TTL) to avoid duplicate queries
+- Support forced cache refresh
+- Handle missing PTR records and DNS failures gracefully
+- Produce `ResolvedEndpoint` records without affecting connection collection
+
+Example output:
+
+```text
+Remote IP:
+104.18.32.45
+
+Resolved Domain:
+api.example.com
+```
+
+---
+
 ### NetworkUtils
 
 Shared IP helpers used by collectors and intelligence modules:
@@ -197,12 +227,12 @@ Windows Networking APIs (IPv4 + IPv6)
           │                              │
           ▼                              ▼
     Event Dispatcher              RemoteEndpoint records
-          │
-          ▼
-  Correlation Engine
-          │
-          ▼
-   Detection Engine
+          │                              │
+          ▼                              ▼
+  Correlation Engine                 Domain Resolver
+          │                              │
+          ▼                              ▼
+   Detection Engine               ResolvedEndpoint (+ DnsCache)
 ```
 
 ### Flow Description
@@ -211,8 +241,9 @@ Windows Networking APIs (IPv4 + IPv6)
 2. The Network Monitor collects connection data (local and remote endpoints).
 3. The Connection Tracker maintains the current connection state.
 4. The Remote Endpoint Identifier validates remote IPs and records address family.
-5. Connection events are published through the Event Dispatcher.
-6. Higher-level modules consume these events for correlation, behavioral analysis, and threat detection.
+5. The Domain Resolver performs reverse DNS (with caching) for human-readable hostnames.
+6. Connection events are published through the Event Dispatcher.
+7. Higher-level modules consume these events for correlation, behavioral analysis, and threat detection.
 
 ---
 
@@ -260,7 +291,6 @@ Future iterations of the Network Monitor may include:
 
 - Real-time event streaming.
 - Connection history caching.
-- Domain name resolution.
 - Upload and download traffic statistics.
 - Connection filtering.
 - Performance optimizations for high connection volumes.
