@@ -126,7 +126,9 @@ Collect contextual information about network destinations.
 
 Track:
 
-* IP Address
+* Remote IP Address (IPv4 / IPv6)
+* Address Family
+* Local vs Remote Endpoints
 * Domain Name
 * Connection History
 * Frequency of Communication
@@ -134,11 +136,14 @@ Track:
 Example:
 
 ```text
-Destination:
-api.example.com
+Process:
+python.exe
 
-Connections:
-57
+Remote IP:
+104.18.32.45
+
+Address Family:
+IPv4
 ```
 
 ---
@@ -255,6 +260,7 @@ Alerting & Reporting
 
 ## M3 — Connection Intelligence
 
+* Remote IP identification (IPv4 / IPv6)
 * Destination analysis
 * Domain resolution
 * Communication statistics

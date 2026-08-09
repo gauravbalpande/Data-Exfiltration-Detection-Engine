@@ -35,6 +35,7 @@ network/
 │
 ├── models/
 │     Connection.h
+│     RemoteEndpoint.h
 │
 ├── collectors/
 │     NetworkMonitor.h
@@ -43,6 +44,14 @@ network/
 ├── tracker/
 │     ConnectionTracker.h
 │     ConnectionTracker.cpp
+│
+├── attribution/
+│     AttributedConnection.h
+│     ConnectionAttributor.h
+│
+├── intelligence/
+│     RemoteEndpointIdentifier.h
+│     RemoteEndpointIdentifier.cpp
 │
 ├── events/
 │     EventDispatcher.h
@@ -58,11 +67,13 @@ network/
 | Module | Responsibility |
 |---------|----------------|
 | interfaces | Defines contracts for network monitoring components. |
-| models | Stores data structures representing network connections. |
+| models | Stores data structures representing network connections and remote endpoints. |
 | collectors | Collects network connection information from the operating system. |
 | tracker | Tracks connection lifecycle (new, active, closed). |
+| attribution | Associates connections with owning processes by PID. |
+| intelligence | Extracts reusable connection intelligence (remote IPs, address family). |
 | events | Publishes connection events to other system components. |
-| utils | Common helper utilities shared across the module. |
+| utils | Shared helpers such as IP address validation. |
 
 ---
 
@@ -75,7 +86,7 @@ The main component responsible for collecting active network connections from th
 Responsibilities:
 
 - Query Windows networking APIs.
-- Collect active TCP/UDP connections.
+- Collect active IPv4 and IPv6 TCP/UDP connections.
 - Pass collected data to the Connection Tracker.
 
 ---
@@ -94,6 +105,57 @@ Example fields:
 - Protocol
 - Connection State
 - Timestamp
+
+---
+
+### RemoteEndpoint
+
+Represents an identified remote peer for an active connection.
+
+Example fields:
+
+- Process ID
+- Process Name
+- Protocol
+- Local IP / Local Port
+- Remote IP / Remote Port
+- Address Family (IPv4 / IPv6)
+- Timestamp
+
+Example output:
+
+```text
+Process:
+python.exe
+
+Remote IP:
+104.18.32.45
+
+Address Family:
+IPv4
+```
+
+---
+
+### RemoteEndpointIdentifier
+
+Connection Intelligence helper that:
+
+- Enumerates remote IP addresses from active connections
+- Distinguishes local vs remote endpoints
+- Detects address family (IPv4 / IPv6)
+- Validates IP formatting before storing a `RemoteEndpoint`
+- Skips listening sockets and malformed remotes gracefully
+
+---
+
+### NetworkUtils
+
+Shared IP helpers used by collectors and intelligence modules:
+
+- IPv4 / IPv6 format validation
+- Address family detection
+- Loopback and unspecified address checks
 
 ---
 
@@ -124,16 +186,17 @@ Example consumers include:
 ## High-Level Data Flow
 
 ```text
-Windows Networking APIs
+Windows Networking APIs (IPv4 + IPv6)
           │
           ▼
     Network Monitor
           │
-          ▼
-   Connection Tracker
-          │
-          ▼
-    Event Dispatcher
+          ├──────────────────────────────┐
+          ▼                              ▼
+   Connection Tracker          Remote Endpoint Identifier
+          │                              │
+          ▼                              ▼
+    Event Dispatcher              RemoteEndpoint records
           │
           ▼
   Correlation Engine
@@ -144,11 +207,12 @@ Windows Networking APIs
 
 ### Flow Description
 
-1. The operating system exposes active network connection information.
-2. The Network Monitor collects connection data.
+1. The operating system exposes active IPv4/IPv6 network connection information.
+2. The Network Monitor collects connection data (local and remote endpoints).
 3. The Connection Tracker maintains the current connection state.
-4. Connection events are published through the Event Dispatcher.
-5. Higher-level modules consume these events for correlation, behavioral analysis, and threat detection.
+4. The Remote Endpoint Identifier validates remote IPs and records address family.
+5. Connection events are published through the Event Dispatcher.
+6. Higher-level modules consume these events for correlation, behavioral analysis, and threat detection.
 
 ---
 
@@ -194,7 +258,6 @@ Higher-level components should remain independent of operating system APIs, maki
 
 Future iterations of the Network Monitor may include:
 
-- IPv6 support.
 - Real-time event streaming.
 - Connection history caching.
 - Domain name resolution.
