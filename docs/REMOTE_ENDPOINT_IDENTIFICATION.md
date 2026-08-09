@@ -34,6 +34,7 @@ RemoteEndpoint
 | `NetworkUtils` | `src/network/utils/` | Validate IPs, detect address family, loopback/unspecified checks |
 | `RemoteEndpoint` | `src/network/models/` | Portable remote peer record |
 | `RemoteEndpointIdentifier` | `src/network/intelligence/` | Extract validated remotes from connections |
+| `DomainResolver` / `DnsCache` | `src/network/intelligence/` / `src/network/cache/` | Reverse DNS + hostname cache |
 | `NetworkMonitor` | `src/network/collectors/` | Enumerate IPv4 + IPv6 TCP/UDP tables |
 
 ## Usage
