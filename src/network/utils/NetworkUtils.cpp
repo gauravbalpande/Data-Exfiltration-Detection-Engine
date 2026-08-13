@@ -272,4 +272,27 @@ bool NetworkUtils::hasRemoteEndpoint(const std::string& address)
     return isValidIpAddress(address);
 }
 
+std::string NetworkUtils::protocolToString(ProtocolType protocol)
+{
+    switch (protocol)
+    {
+    case ProtocolType::TCP:
+        return "TCP";
+    case ProtocolType::UDP:
+        return "UDP";
+    default:
+        return "Unknown";
+    }
+}
+
+bool NetworkUtils::isValidPort(uint16_t port)
+{
+    return port > 0;
+}
+
+bool NetworkUtils::hasRemotePort(uint16_t port)
+{
+    return isValidPort(port);
+}
+
 } // namespace network
