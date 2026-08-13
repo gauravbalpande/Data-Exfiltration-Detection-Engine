@@ -129,21 +129,18 @@ Track:
 * Remote IP Address (IPv4 / IPv6)
 * Address Family
 * Local vs Remote Endpoints
-* Domain Name
+* Resolved Domain Name (reverse DNS + cache)
 * Connection History
 * Frequency of Communication
 
 Example:
 
 ```text
-Process:
-python.exe
-
 Remote IP:
 104.18.32.45
 
-Address Family:
-IPv4
+Resolved Domain:
+api.example.com
 ```
 
 ---
@@ -261,8 +258,8 @@ Alerting & Reporting
 ## M3 — Connection Intelligence
 
 * Remote IP identification (IPv4 / IPv6)
+* Domain resolution (reverse DNS + cache)
 * Destination analysis
-* Domain resolution
 * Communication statistics
 
 ---
