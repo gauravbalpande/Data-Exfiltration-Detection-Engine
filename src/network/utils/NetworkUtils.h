@@ -1,6 +1,9 @@
 #pragma once
 
+#include <cstdint>
 #include <string>
+
+#include "../models/Connection.h"
 
 namespace network
 {
@@ -57,6 +60,15 @@ public:
      * are considered valid (local services communicating with itself).
      */
     static bool hasRemoteEndpoint(const std::string& address);
+
+    /// Human-readable transport protocol label (TCP / UDP / Unknown).
+    static std::string protocolToString(ProtocolType protocol);
+
+    /// True when @p port is in the valid TCP/UDP range (1–65535).
+    static bool isValidPort(uint16_t port);
+
+    /// True when @p port represents an assigned remote peer port.
+    static bool hasRemotePort(uint16_t port);
 };
 
 } // namespace network

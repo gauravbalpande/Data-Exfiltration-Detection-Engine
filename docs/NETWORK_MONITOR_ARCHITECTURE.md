@@ -37,6 +37,7 @@ network/
 │     Connection.h
 │     RemoteEndpoint.h
 │     ResolvedEndpoint.h
+│     ProtocolPortProfile.h
 │
 ├── collectors/
 │     NetworkMonitor.h
@@ -55,6 +56,8 @@ network/
 │     RemoteEndpointIdentifier.cpp
 │     DomainResolver.h
 │     DomainResolver.cpp
+│     ProtocolPortAnalyzer.h
+│     ProtocolPortAnalyzer.cpp
 │
 ├── cache/
 │     DnsCache.h
@@ -74,14 +77,14 @@ network/
 | Module | Responsibility |
 |---------|----------------|
 | interfaces | Defines contracts for network monitoring components. |
-| models | Stores data structures representing network connections and remote endpoints. |
+| models | Stores data structures representing network connections and intelligence records. |
 | collectors | Collects network connection information from the operating system. |
 | tracker | Tracks connection lifecycle (new, active, closed). |
 | attribution | Associates connections with owning processes by PID. |
-| intelligence | Extracts reusable connection intelligence (remote IPs, address family, domains). |
+| intelligence | Extracts reusable connection intelligence (remote IPs, domains, ports). |
 | cache | Caches reverse-DNS hostnames to avoid duplicate lookups. |
 | events | Publishes connection events to other system components. |
-| utils | Shared helpers such as IP address validation. |
+| utils | Shared helpers such as IP, protocol, and port validation. |
 
 ---
 
@@ -179,6 +182,31 @@ api.example.com
 
 ---
 
+### ProtocolPortAnalyzer
+
+Connection Intelligence helper that:
+
+- Detects TCP and UDP connections
+- Tracks local and remote ports from the shared `Connection` model
+- Preserves protocol metadata for reporting
+- Supports IPv4 and IPv6 local endpoints
+- Skips invalid rows gracefully (no remote port on listening sockets)
+
+Example output:
+
+```text
+Protocol:
+TCP
+
+Local Port:
+53142
+
+Remote Port:
+443
+```
+
+---
+
 ### NetworkUtils
 
 Shared IP helpers used by collectors and intelligence modules:
@@ -186,6 +214,7 @@ Shared IP helpers used by collectors and intelligence modules:
 - IPv4 / IPv6 format validation
 - Address family detection
 - Loopback and unspecified address checks
+- Protocol and port validation helpers
 
 ---
 
@@ -228,11 +257,13 @@ Windows Networking APIs (IPv4 + IPv6)
           ▼                              ▼
     Event Dispatcher              RemoteEndpoint records
           │                              │
-          ▼                              ▼
-  Correlation Engine                 Domain Resolver
-          │                              │
-          ▼                              ▼
-   Detection Engine               ResolvedEndpoint (+ DnsCache)
+          ├──────────────┬───────────────┤
+          ▼              ▼               ▼
+  Correlation Engine  Domain Resolver  Protocol Port Analyzer
+          │              │               │
+          ▼              ▼               ▼
+   Detection Engine  ResolvedEndpoint  ProtocolPortProfile
+                           (+ DnsCache)
 ```
 
 ### Flow Description
@@ -242,8 +273,9 @@ Windows Networking APIs (IPv4 + IPv6)
 3. The Connection Tracker maintains the current connection state.
 4. The Remote Endpoint Identifier validates remote IPs and records address family.
 5. The Domain Resolver performs reverse DNS (with caching) for human-readable hostnames.
-6. Connection events are published through the Event Dispatcher.
-7. Higher-level modules consume these events for correlation, behavioral analysis, and threat detection.
+6. The Protocol Port Analyzer extracts transport protocol and port metadata.
+7. Connection events are published through the Event Dispatcher.
+8. Higher-level modules consume these events for correlation, behavioral analysis, and threat detection.
 
 ---
 

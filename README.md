@@ -130,17 +130,21 @@ Track:
 * Address Family
 * Local vs Remote Endpoints
 * Resolved Domain Name (reverse DNS + cache)
+* Protocol and Port (TCP/UDP, local/remote)
 * Connection History
 * Frequency of Communication
 
 Example:
 
 ```text
-Remote IP:
-104.18.32.45
+Protocol:
+TCP
 
-Resolved Domain:
-api.example.com
+Local Port:
+53142
+
+Remote Port:
+443
 ```
 
 ---
@@ -259,6 +263,7 @@ Alerting & Reporting
 
 * Remote IP identification (IPv4 / IPv6)
 * Domain resolution (reverse DNS + cache)
+* Port and protocol analysis (TCP/UDP)
 * Destination analysis
 * Communication statistics
 
