@@ -131,17 +131,21 @@ Track:
 * Local vs Remote Endpoints
 * Resolved Domain Name (reverse DNS + cache)
 * Protocol and Port (TCP/UDP, local/remote)
+* Reusable connection metadata (IP + domain + protocol + ports)
 * Connection History
 * Frequency of Communication
 
 Example:
 
 ```text
+Remote IP:
+104.18.32.45
+
+Domain:
+api.example.com
+
 Protocol:
 TCP
-
-Local Port:
-53142
 
 Remote Port:
 443
@@ -264,6 +268,7 @@ Alerting & Reporting
 * Remote IP identification (IPv4 / IPv6)
 * Domain resolution (reverse DNS + cache)
 * Port and protocol analysis (TCP/UDP)
+* Connection metadata model (IP + domain + protocol + ports)
 * Destination analysis
 * Communication statistics
 
