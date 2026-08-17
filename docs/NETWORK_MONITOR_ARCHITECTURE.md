@@ -295,6 +295,7 @@ Windows Networking APIs (IPv4 + IPv6)
                            (+ DnsCache)         │
                                                ▼
                                       ConnectionMetadata
+                           (+ DnsCache)
 ```
 
 ### Flow Description
@@ -308,6 +309,8 @@ Windows Networking APIs (IPv4 + IPv6)
 7. `ConnectionMetadata` combines remote IP, domain, protocol, and ports into one reusable record.
 8. Connection events are published through the Event Dispatcher.
 9. Higher-level modules consume these events for correlation, behavioral analysis, and threat detection.
+7. Connection events are published through the Event Dispatcher.
+8. Higher-level modules consume these events for correlation, behavioral analysis, and threat detection.
 
 ---
 
