@@ -38,6 +38,7 @@ network/
 │     RemoteEndpoint.h
 │     ResolvedEndpoint.h
 │     ProtocolPortProfile.h
+│     ConnectionMetadata.h
 │
 ├── collectors/
 │     NetworkMonitor.h
@@ -207,6 +208,34 @@ Remote Port:
 
 ---
 
+### ConnectionMetadata
+
+Reusable Connection Intelligence record that:
+
+- Stores remote IP and resolved domain together
+- Stores transport protocol plus local and remote ports
+- Can be built from a `Connection` snapshot via `fromConnection`
+- Provides formatted output for logging and inspection
+- Contains metadata only (no OS or DNS logic)
+
+Example output:
+
+```text
+Remote IP:
+104.18.32.45
+
+Domain:
+api.example.com
+
+Protocol:
+TCP
+
+Remote Port:
+443
+```
+
+---
+
 ### NetworkUtils
 
 Shared IP helpers used by collectors and intelligence modules:
@@ -263,6 +292,9 @@ Windows Networking APIs (IPv4 + IPv6)
           │              │               │
           ▼              ▼               ▼
    Detection Engine  ResolvedEndpoint  ProtocolPortProfile
+                           (+ DnsCache)         │
+                                               ▼
+                                      ConnectionMetadata
                            (+ DnsCache)
 ```
 
@@ -274,6 +306,9 @@ Windows Networking APIs (IPv4 + IPv6)
 4. The Remote Endpoint Identifier validates remote IPs and records address family.
 5. The Domain Resolver performs reverse DNS (with caching) for human-readable hostnames.
 6. The Protocol Port Analyzer extracts transport protocol and port metadata.
+7. `ConnectionMetadata` combines remote IP, domain, protocol, and ports into one reusable record.
+8. Connection events are published through the Event Dispatcher.
+9. Higher-level modules consume these events for correlation, behavioral analysis, and threat detection.
 7. Connection events are published through the Event Dispatcher.
 8. Higher-level modules consume these events for correlation, behavioral analysis, and threat detection.
 
