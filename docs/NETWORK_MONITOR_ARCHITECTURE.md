@@ -39,6 +39,7 @@ network/
 │     ResolvedEndpoint.h
 │     ProtocolPortProfile.h
 │     ConnectionMetadata.h
+│     ConnectionUploadStats.h
 │
 ├── collectors/
 │     NetworkMonitor.h
@@ -80,7 +81,7 @@ network/
 | interfaces | Defines contracts for network monitoring components. |
 | models | Stores data structures representing network connections and intelligence records. |
 | collectors | Collects network connection information from the operating system. |
-| tracker | Tracks connection lifecycle (new, active, closed). |
+| tracker | Tracks connection lifecycle and cumulative outbound upload bytes. |
 | attribution | Associates connections with owning processes by PID. |
 | intelligence | Extracts reusable connection intelligence (remote IPs, domains, ports). |
 | cache | Caches reverse-DNS hostnames to avoid duplicate lookups. |
@@ -259,6 +260,33 @@ Responsibilities:
 
 ---
 
+### UploadTracker
+
+Maintains cumulative outbound upload statistics for active connections.
+
+Responsibilities:
+
+- Compare OS-reported bytes-sent counters across snapshots.
+- Accumulate upload deltas per connection identity.
+- Associate upload totals with owning PID and process name.
+- Preserve final statistics when connections close.
+- Expose reusable `ConnectionUploadStats` records for detection modules.
+
+Example output:
+
+```text
+Process:
+python.exe
+
+Remote:
+104.18.32.45:443
+
+Uploaded:
+2.4 MB
+```
+
+---
+
 ### EventDispatcher
 
 Publishes connection events so downstream modules can consume them without directly depending on the Network Monitor.
@@ -289,13 +317,12 @@ Windows Networking APIs (IPv4 + IPv6)
           ├──────────────┬───────────────┤
           ▼              ▼               ▼
   Correlation Engine  Domain Resolver  Protocol Port Analyzer
-          │              │               │
-          ▼              ▼               ▼
+          │         (+ DnsCache)              │
+          ▼              ▼                    ▼
    Detection Engine  ResolvedEndpoint  ProtocolPortProfile
-                           (+ DnsCache)         │
+                                               │
                                                ▼
                                       ConnectionMetadata
-                           (+ DnsCache)
 ```
 
 ### Flow Description
@@ -309,8 +336,6 @@ Windows Networking APIs (IPv4 + IPv6)
 7. `ConnectionMetadata` combines remote IP, domain, protocol, and ports into one reusable record.
 8. Connection events are published through the Event Dispatcher.
 9. Higher-level modules consume these events for correlation, behavioral analysis, and threat detection.
-7. Connection events are published through the Event Dispatcher.
-8. Higher-level modules consume these events for correlation, behavioral analysis, and threat detection.
 
 ---
 
@@ -358,6 +383,6 @@ Future iterations of the Network Monitor may include:
 
 - Real-time event streaming.
 - Connection history caching.
-- Upload and download traffic statistics.
+- Download traffic statistics.
 - Connection filtering.
 - Performance optimizations for high connection volumes.
