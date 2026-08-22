@@ -1,6 +1,8 @@
 #include "NetworkUtils.h"
 
 #include <cctype>
+#include <iomanip>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -293,6 +295,30 @@ bool NetworkUtils::isValidPort(uint16_t port)
 bool NetworkUtils::hasRemotePort(uint16_t port)
 {
     return isValidPort(port);
+}
+
+std::string NetworkUtils::formatBytes(uint64_t bytes)
+{
+    if (bytes < 1024)
+    {
+        return std::to_string(bytes) + " B";
+    }
+
+    static const char* units[] = {"KB", "MB", "GB", "TB"};
+    double value = static_cast<double>(bytes) / 1024.0;
+    int unit = 0;
+
+    while (value >= 1024.0 && unit < 3)
+    {
+        value /= 1024.0;
+        ++unit;
+    }
+
+    std::ostringstream out;
+    out.setf(std::ios::fixed);
+    out.precision(1);
+    out << value << " " << units[unit];
+    return out.str();
 }
 
 } // namespace network

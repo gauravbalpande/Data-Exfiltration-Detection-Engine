@@ -69,6 +69,14 @@ public:
 
     /// True when @p port represents an assigned remote peer port.
     static bool hasRemotePort(uint16_t port);
+
+    /**
+     * @brief Formats a byte count for human-readable reporting.
+     *
+     * Uses binary units (B, KB, MB, GB) with one decimal place above bytes.
+     * Example: 2516582 -> "2.4 MB"
+     */
+    static std::string formatBytes(uint64_t bytes);
 };
 
 } // namespace network
