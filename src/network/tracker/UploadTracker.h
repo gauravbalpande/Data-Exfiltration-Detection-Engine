@@ -7,20 +7,11 @@
 #include <vector>
 
 #include "../models/Connection.h"
+#include "../models/ConnectionTransferSnapshot.h"
 #include "../models/ConnectionUploadStats.h"
 
 namespace network
 {
-
-/**
- * @brief OS-reported byte counter for a single connection snapshot.
- */
-struct ConnectionTransferSnapshot
-{
-    Connection connection;
-    uint64_t bytesSent = 0;
-    std::string processName;
-};
 
 /**
  * @brief Tracks cumulative outbound bytes for active network connections.

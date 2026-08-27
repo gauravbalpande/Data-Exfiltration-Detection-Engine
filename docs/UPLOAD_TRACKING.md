@@ -29,31 +29,38 @@ ConnectionUploadStats
 └── is_active
 ```
 
-Input snapshots pair a `Connection` with an OS-reported cumulative `bytesSent` counter:
+Input snapshots pair a `Connection` with OS-reported cumulative byte counters:
 
 ```text
 ConnectionTransferSnapshot
 ├── connection
 ├── bytes_sent
+├── bytes_received
 └── process_name
 ```
+
+`UploadTracker` consumes `bytes_sent`. The shared snapshot is produced by
+`NetworkMonitor::getConnectionTransferSnapshots()` via TCP ESTATS.
 
 ## Components
 
 | Component | Location | Role |
 |-----------|----------|------|
 | `ConnectionUploadStats` | `src/network/models/` | Portable upload metrics record |
+| `ConnectionTransferSnapshot` | `src/network/models/` | Shared OS byte-counter snapshot |
 | `UploadTracker` | `src/network/tracker/` | Accumulates outbound bytes across snapshots |
+| `NetworkMonitor::getConnectionTransferSnapshots` | `src/network/collectors/` | Reads TCP ESTATS `DataBytesOut` / `DataBytesIn` |
 | `NetworkUtils::formatBytes` | `src/network/utils/` | Human-readable byte formatting |
 | `Connection` | `src/network/models/` | Connection identity and timestamps |
 
 ## Usage
 
 ```cpp
+network::NetworkMonitor monitor;
 network::UploadTracker tracker;
 
-std::vector<network::ConnectionTransferSnapshot> snapshots;
-// Populate snapshots from the collector with OS byte counters.
+auto snapshots = monitor.getConnectionTransferSnapshots();
+// Optionally fill snapshot.processName via process attribution.
 
 auto stats = tracker.update(snapshots);
 
@@ -81,7 +88,7 @@ Uploaded:
 ## Edge Cases
 
 - **First snapshot:** Establishes the OS byte baseline without counting existing traffic as new upload activity.
-- **Counter reset:** If an OS counter decreases, the new reading is treated as fresh progress so totals remain consistent.
+- **Counter reset:** If an OS counter decreases, only the new counter value is treated as fresh progress (earlier progress already lives in the cumulative total).
 - **Duplicate rows:** Duplicate connection rows within one snapshot are ignored, matching `ConnectionTracker` behavior.
 - **Closed connections:** Final upload totals move to `getClosedUploadStats()` and are marked inactive.
 
