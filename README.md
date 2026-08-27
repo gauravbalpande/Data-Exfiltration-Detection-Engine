@@ -100,7 +100,7 @@ example.com
 
 Measure:
 
-* Upload volume
+* Upload volume (per-connection outbound tracking via `UploadTracker`)
 * Download volume
 * Transfer rate
 * Session statistics
@@ -111,8 +111,11 @@ Example:
 Process:
 python.exe
 
+Remote:
+104.18.32.45:443
+
 Uploaded:
-850 MB
+2.4 MB
 
 Downloaded:
 12 MB
@@ -276,7 +279,7 @@ Alerting & Reporting
 
 ## M4 — Data Transfer Analysis
 
-* Upload monitoring
+* Upload monitoring (`ConnectionUploadStats`, `UploadTracker`)
 * Download monitoring
 * Transfer metrics
 
