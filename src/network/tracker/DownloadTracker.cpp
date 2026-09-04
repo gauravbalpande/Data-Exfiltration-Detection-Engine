@@ -1,4 +1,4 @@
-#include "UploadTracker.h"
+#include "DownloadTracker.h"
 
 #include <sstream>
 #include <unordered_set>
@@ -6,9 +6,9 @@
 namespace network
 {
 
-std::string UploadTracker::makeKey(const Connection& connection)
+std::string DownloadTracker::makeKey(const Connection& connection)
 {
-    // Same identity key as ConnectionTracker: protocol + PID + 4-tuple.
+    // Same identity key as ConnectionTracker / UploadTracker: protocol + PID + 4-tuple.
     std::ostringstream key;
     key << static_cast<int>(connection.protocol) << "|"
         << connection.processId << "|"
@@ -19,7 +19,7 @@ std::string UploadTracker::makeKey(const Connection& connection)
     return key.str();
 }
 
-uint64_t UploadTracker::computeDelta(
+uint64_t DownloadTracker::computeDelta(
     uint64_t previousCounter,
     uint64_t currentCounter)
 {
@@ -33,30 +33,30 @@ uint64_t UploadTracker::computeDelta(
     return currentCounter;
 }
 
-ConnectionUploadStats UploadTracker::toStats(
-    const TrackedUpload& tracked,
+ConnectionDownloadStats DownloadTracker::toStats(
+    const TrackedDownload& tracked,
     bool isActive) const
 {
-    return ConnectionUploadStats(
+    return ConnectionDownloadStats(
         tracked.connection.processId,
         tracked.processName,
         tracked.connection.remoteAddress,
         tracked.connection.remotePort,
         tracked.connection.protocol,
-        tracked.cumulativeUploadedBytes,
+        tracked.cumulativeDownloadedBytes,
         tracked.firstObserved,
         tracked.lastUpdated,
         isActive);
 }
 
-std::vector<ConnectionUploadStats> UploadTracker::update(
+std::vector<ConnectionDownloadStats> DownloadTracker::update(
     const std::vector<ConnectionTransferSnapshot>& snapshots)
 {
     const auto now = std::chrono::system_clock::now();
-    std::vector<ConnectionUploadStats> results;
+    std::vector<ConnectionDownloadStats> results;
     results.reserve(snapshots.size());
 
-    std::unordered_map<std::string, TrackedUpload> nextActive;
+    std::unordered_map<std::string, TrackedDownload> nextActive;
     nextActive.reserve(snapshots.size());
 
     std::unordered_set<std::string> seen;
@@ -70,29 +70,29 @@ std::vector<ConnectionUploadStats> UploadTracker::update(
             continue;
         }
 
-        TrackedUpload tracked;
+        TrackedDownload tracked;
         tracked.connection = snapshot.connection;
         tracked.processName = snapshot.processName;
         tracked.lastUpdated = snapshot.connection.timestamp != std::chrono::system_clock::time_point{}
                                   ? snapshot.connection.timestamp
                                   : now;
 
-        const auto existing = activeUploads_.find(key);
-        if (existing != activeUploads_.end())
+        const auto existing = activeDownloads_.find(key);
+        if (existing != activeDownloads_.end())
         {
             tracked.firstObserved = existing->second.firstObserved;
-            tracked.baselineBytesSent = existing->second.baselineBytesSent;
-            tracked.cumulativeUploadedBytes = existing->second.cumulativeUploadedBytes;
+            tracked.baselineBytesReceived = existing->second.baselineBytesReceived;
+            tracked.cumulativeDownloadedBytes = existing->second.cumulativeDownloadedBytes;
 
             if (seeded_)
             {
                 const uint64_t delta = computeDelta(
-                    tracked.baselineBytesSent,
-                    snapshot.bytesSent);
-                tracked.cumulativeUploadedBytes += delta;
+                    tracked.baselineBytesReceived,
+                    snapshot.bytesReceived);
+                tracked.cumulativeDownloadedBytes += delta;
             }
 
-            tracked.baselineBytesSent = snapshot.bytesSent;
+            tracked.baselineBytesReceived = snapshot.bytesReceived;
 
             if (tracked.processName.empty())
             {
@@ -102,8 +102,8 @@ std::vector<ConnectionUploadStats> UploadTracker::update(
         else
         {
             tracked.firstObserved = tracked.lastUpdated;
-            tracked.baselineBytesSent = snapshot.bytesSent;
-            tracked.cumulativeUploadedBytes = 0;
+            tracked.baselineBytesReceived = snapshot.bytesReceived;
+            tracked.cumulativeDownloadedBytes = 0;
         }
 
         nextActive.emplace(key, std::move(tracked));
@@ -111,55 +111,55 @@ std::vector<ConnectionUploadStats> UploadTracker::update(
 
     if (!seeded_)
     {
-        activeUploads_ = std::move(nextActive);
+        activeDownloads_ = std::move(nextActive);
         seeded_ = true;
 
-        activeUploadStats_.clear();
-        for (const auto& [key, tracked] : activeUploads_)
+        activeDownloadStats_.clear();
+        for (const auto& [key, tracked] : activeDownloads_)
         {
-            activeUploadStats_.emplace(key, toStats(tracked, true));
-            results.push_back(activeUploadStats_.at(key));
+            activeDownloadStats_.emplace(key, toStats(tracked, true));
+            results.push_back(activeDownloadStats_.at(key));
         }
         return results;
     }
 
-    for (const auto& [key, previous] : activeUploads_)
+    for (const auto& [key, previous] : activeDownloads_)
     {
         if (nextActive.find(key) == nextActive.end())
         {
-            closedUploadStats_[key] = toStats(previous, false);
+            closedDownloadStats_[key] = toStats(previous, false);
         }
     }
 
-    activeUploads_ = std::move(nextActive);
+    activeDownloads_ = std::move(nextActive);
 
-    activeUploadStats_.clear();
-    for (const auto& [key, tracked] : activeUploads_)
+    activeDownloadStats_.clear();
+    for (const auto& [key, tracked] : activeDownloads_)
     {
-        activeUploadStats_.emplace(key, toStats(tracked, true));
-        results.push_back(activeUploadStats_.at(key));
+        activeDownloadStats_.emplace(key, toStats(tracked, true));
+        results.push_back(activeDownloadStats_.at(key));
     }
 
     return results;
 }
 
-const std::unordered_map<std::string, ConnectionUploadStats>&
-UploadTracker::getActiveUploadStats() const
+const std::unordered_map<std::string, ConnectionDownloadStats>&
+DownloadTracker::getActiveDownloadStats() const
 {
-    return activeUploadStats_;
+    return activeDownloadStats_;
 }
 
-const std::unordered_map<std::string, ConnectionUploadStats>&
-UploadTracker::getClosedUploadStats() const
+const std::unordered_map<std::string, ConnectionDownloadStats>&
+DownloadTracker::getClosedDownloadStats() const
 {
-    return closedUploadStats_;
+    return closedDownloadStats_;
 }
 
-void UploadTracker::reset()
+void DownloadTracker::reset()
 {
-    activeUploads_.clear();
-    activeUploadStats_.clear();
-    closedUploadStats_.clear();
+    activeDownloads_.clear();
+    activeDownloadStats_.clear();
+    closedDownloadStats_.clear();
     seeded_ = false;
 }
 

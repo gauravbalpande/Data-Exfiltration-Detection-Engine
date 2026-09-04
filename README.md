@@ -101,7 +101,7 @@ example.com
 Measure:
 
 * Upload volume (per-connection outbound tracking via `UploadTracker`)
-* Download volume
+* Download volume (per-connection inbound tracking via `DownloadTracker`)
 * Transfer rate
 * Session statistics
 
@@ -280,8 +280,8 @@ Alerting & Reporting
 ## M4 — Data Transfer Analysis
 
 * Upload monitoring (`ConnectionUploadStats`, `UploadTracker`)
-* Download monitoring
-* Transfer metrics
+* Download monitoring (`ConnectionDownloadStats`, `DownloadTracker`)
+* Transfer metrics (OS TCP ESTATS via `NetworkMonitor::getConnectionTransferSnapshots`)
 
 ---
 
