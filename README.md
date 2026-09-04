@@ -102,10 +102,26 @@ Measure:
 
 * Upload volume (per-connection outbound tracking via `UploadTracker`)
 * Download volume (per-connection inbound tracking via `DownloadTracker`)
-* Transfer rate
-* Session statistics
+* Transfer rate (short-window rates via `TransferRateTracker`)
+* Session statistics (per-process / per-connection bandwidth totals)
 
 Example:
+
+```text
+Process:
+python.exe
+
+Upload Rate:
+1.8 MB/s
+
+Download Rate:
+320.0 KB/s
+
+Total Transfer:
+42.6 MB
+```
+
+Volume detail example:
 
 ```text
 Process:
@@ -282,6 +298,7 @@ Alerting & Reporting
 * Upload monitoring (`ConnectionUploadStats`, `UploadTracker`)
 * Download monitoring (`ConnectionDownloadStats`, `DownloadTracker`)
 * Transfer metrics (OS TCP ESTATS via `NetworkMonitor::getConnectionTransferSnapshots`)
+* Transfer rates (`ConnectionBandwidthStats`, `ProcessBandwidthStats`, `TransferRateTracker`)
 
 ---
 

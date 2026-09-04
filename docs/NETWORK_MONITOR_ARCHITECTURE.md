@@ -42,6 +42,8 @@ network/
 │     ConnectionUploadStats.h
 │     ConnectionDownloadStats.h
 │     ConnectionTransferSnapshot.h
+│     ConnectionBandwidthStats.h
+│     ProcessBandwidthStats.h
 │
 ├── collectors/
 │     NetworkMonitor.h
@@ -54,6 +56,8 @@ network/
 │     UploadTracker.cpp
 │     DownloadTracker.h
 │     DownloadTracker.cpp
+│     TransferRateTracker.h
+│     TransferRateTracker.cpp
 │
 ├── attribution/
 │     AttributedConnection.h
@@ -87,7 +91,7 @@ network/
 | interfaces | Defines contracts for network monitoring components. |
 | models | Stores data structures representing network connections and intelligence records. |
 | collectors | Collects network connection information from the operating system. |
-| tracker | Tracks connection lifecycle and cumulative upload/download bytes. |
+| tracker | Tracks connection lifecycle, cumulative upload/download bytes, and transfer rates. |
 | attribution | Associates connections with owning processes by PID. |
 | intelligence | Extracts reusable connection intelligence (remote IPs, domains, ports). |
 | cache | Caches reverse-DNS hostnames to avoid duplicate lookups. |
@@ -321,6 +325,36 @@ Downloaded:
 
 ---
 
+### TransferRateTracker
+
+Calculates short-window upload/download rates and total bandwidth usage from successive OS byte-counter snapshots.
+
+Responsibilities:
+
+- Derive per-connection upload and download rates (`delta_bytes / elapsed_seconds`).
+- Accumulate session totals and expose total transfer (upload + download).
+- Aggregate active connections into per-process bandwidth statistics.
+- Preserve final totals when connections close; clear rates for inactive endpoints.
+- Handle OS counter resets without producing negative or infinite rates.
+
+Example output:
+
+```text
+Process:
+python.exe
+
+Upload Rate:
+1.8 MB/s
+
+Download Rate:
+320.0 KB/s
+
+Total Transfer:
+42.6 MB
+```
+
+---
+
 ### EventDispatcher
 
 Publishes connection events so downstream modules can consume them without directly depending on the Network Monitor.
@@ -345,9 +379,10 @@ Windows Networking APIs (IPv4 + IPv6 + TCP ESTATS)
           ▼                  ▼                              ▼
    Connection Tracker  Transfer Snapshots        Remote Endpoint Identifier
           │                  │                              │
-          ▼                  ├──────────────┐               ▼
-    Event Dispatcher         ▼              ▼        RemoteEndpoint records
-          │            UploadTracker  DownloadTracker       │
+          ▼                  ├──────────────┬───────────────┤
+    Event Dispatcher         ▼              ▼               ▼
+          │            UploadTracker  DownloadTracker  TransferRateTracker
+          │                  │              │               │
           ├──────────────┬───┴──────────────┴───────────────┤
           ▼              ▼               ▼                  ▼
   Correlation Engine  Domain Resolver  Protocol Port Analyzer
@@ -365,12 +400,13 @@ Windows Networking APIs (IPv4 + IPv6 + TCP ESTATS)
 2. The Network Monitor collects connection data (local and remote endpoints) and TCP ESTATS byte counters.
 3. The Connection Tracker maintains the current connection state.
 4. UploadTracker / DownloadTracker accumulate outbound and inbound transfer totals from successive snapshots.
-5. The Remote Endpoint Identifier validates remote IPs and records address family.
-6. The Domain Resolver performs reverse DNS (with caching) for human-readable hostnames.
-7. The Protocol Port Analyzer extracts transport protocol and port metadata.
-8. `ConnectionMetadata` combines remote IP, domain, protocol, and ports into one reusable record.
-9. Connection events are published through the Event Dispatcher.
-10. Higher-level modules consume these events for correlation, behavioral analysis, and threat detection.
+5. TransferRateTracker derives short-window rates and per-process bandwidth aggregates from the same snapshots.
+6. The Remote Endpoint Identifier validates remote IPs and records address family.
+7. The Domain Resolver performs reverse DNS (with caching) for human-readable hostnames.
+8. The Protocol Port Analyzer extracts transport protocol and port metadata.
+9. `ConnectionMetadata` combines remote IP, domain, protocol, and ports into one reusable record.
+10. Connection events are published through the Event Dispatcher.
+11. Higher-level modules consume these events for correlation, behavioral analysis, and threat detection.
 
 ---
 

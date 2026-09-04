@@ -77,6 +77,14 @@ public:
      * Example: 2516582 -> "2.4 MB"
      */
     static std::string formatBytes(uint64_t bytes);
+
+    /**
+     * @brief Formats a transfer rate (bytes per second) for reporting.
+     *
+     * Uses the same binary units as formatBytes, suffixed with "/s".
+     * Example: 1887436.8 -> "1.8 MB/s"
+     */
+    static std::string formatRate(double bytesPerSecond);
 };
 
 } // namespace network

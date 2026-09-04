@@ -321,4 +321,37 @@ std::string NetworkUtils::formatBytes(uint64_t bytes)
     return out.str();
 }
 
+std::string NetworkUtils::formatRate(double bytesPerSecond)
+{
+    if (bytesPerSecond < 0.0)
+    {
+        bytesPerSecond = 0.0;
+    }
+
+    if (bytesPerSecond < 1024.0)
+    {
+        std::ostringstream out;
+        out.setf(std::ios::fixed);
+        out.precision(1);
+        out << bytesPerSecond << " B/s";
+        return out.str();
+    }
+
+    static const char* units[] = {"KB/s", "MB/s", "GB/s", "TB/s"};
+    double value = bytesPerSecond / 1024.0;
+    int unit = 0;
+
+    while (value >= 1024.0 && unit < 3)
+    {
+        value /= 1024.0;
+        ++unit;
+    }
+
+    std::ostringstream out;
+    out.setf(std::ios::fixed);
+    out.precision(1);
+    out << value << " " << units[unit];
+    return out.str();
+}
+
 } // namespace network
