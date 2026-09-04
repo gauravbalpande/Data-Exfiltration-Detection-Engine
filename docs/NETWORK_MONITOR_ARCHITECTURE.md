@@ -92,6 +92,7 @@ network/
 | models | Stores data structures representing network connections and intelligence records. |
 | collectors | Collects network connection information from the operating system. |
 | tracker | Tracks connection lifecycle, cumulative upload/download bytes, and transfer rates. |
+| tracker | Tracks connection lifecycle and cumulative upload/download bytes. |
 | attribution | Associates connections with owning processes by PID. |
 | intelligence | Extracts reusable connection intelligence (remote IPs, domains, ports). |
 | cache | Caches reverse-DNS hostnames to avoid duplicate lookups. |
@@ -383,6 +384,9 @@ Windows Networking APIs (IPv4 + IPv6 + TCP ESTATS)
     Event Dispatcher         ▼              ▼               ▼
           │            UploadTracker  DownloadTracker  TransferRateTracker
           │                  │              │               │
+          ▼                  ├──────────────┐               ▼
+    Event Dispatcher         ▼              ▼        RemoteEndpoint records
+          │            UploadTracker  DownloadTracker       │
           ├──────────────┬───┴──────────────┴───────────────┤
           ▼              ▼               ▼                  ▼
   Correlation Engine  Domain Resolver  Protocol Port Analyzer
@@ -407,6 +411,12 @@ Windows Networking APIs (IPv4 + IPv6 + TCP ESTATS)
 9. `ConnectionMetadata` combines remote IP, domain, protocol, and ports into one reusable record.
 10. Connection events are published through the Event Dispatcher.
 11. Higher-level modules consume these events for correlation, behavioral analysis, and threat detection.
+5. The Remote Endpoint Identifier validates remote IPs and records address family.
+6. The Domain Resolver performs reverse DNS (with caching) for human-readable hostnames.
+7. The Protocol Port Analyzer extracts transport protocol and port metadata.
+8. `ConnectionMetadata` combines remote IP, domain, protocol, and ports into one reusable record.
+9. Connection events are published through the Event Dispatcher.
+10. Higher-level modules consume these events for correlation, behavioral analysis, and threat detection.
 
 ---
 
