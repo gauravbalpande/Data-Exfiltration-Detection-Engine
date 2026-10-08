@@ -171,7 +171,7 @@ Remote Port:
 
 ## Process Behavior Timeline
 
-Build a chronological view of process activity using reusable `ProcessActivityEvent` records collected by `TimelineEventCollector`.
+Build a chronological view of process activity using reusable `ProcessActivityEvent` records collected by `TimelineEventCollector` and ordered by `ProcessTimelineBuilder`.
 
 Supported event types:
 
@@ -188,18 +188,14 @@ Collection sources:
 * Connection opened and closed events from the network monitor
 * Upload / download activity from transfer trackers
 
-Events are grouped by PID and duplicate observations are skipped.
+Events are grouped by PID, duplicate observations are skipped, and timelines are sorted by timestamp.
 
 Example:
 
 ```text
-10:01 Process Started
-
-10:03 Network Connection Opened
-
-10:04 Upload Activity Detected
-
-10:10 Connection Closed
+10:01:02 | python.exe | Process Seen
+10:01:10 | python.exe | Connected to 104.18.32.45:443
+10:01:15 | python.exe | Upload Activity: 12.5 MB
 ```
 
 ---
@@ -321,7 +317,7 @@ Alerting & Reporting
 
 * Process activity event model (`ProcessActivityEvent`, `ProcessActivityEventType`)
 * Timeline event collection (`TimelineEventCollector`: process + connection + transfer events, grouped by PID)
-* Activity timeline generation
+* Activity timeline generation (`ProcessTimelineBuilder`: chronological per-process and global timelines)
 * Historical analysis
 
 ---
